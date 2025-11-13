@@ -1,0 +1,40 @@
+count.l 
+
+%{
+#include <stdio.h>
+
+int vCount = 0, cCount = 0, dCount = 0;  // Counters
+%}
+
+%%
+[aeiouAEIOU]          { vCount++; }           // Vowels
+[0-9]                 { dCount++; }           // Digits
+[a-zA-Z]              { cCount++; }           // Consonants (includes vowels temporarily)
+[\n\t ]+              ;                       // Ignore spaces and tabs
+.                     ;                       // Ignore any other character
+%%
+
+int main()
+{
+    printf("Enter any string: ");
+    yylex();  // Run lexical analysis
+
+    // Adjust consonant count to remove vowels
+    cCount -= vCount;
+
+    printf("\nNumber of vowels: %d", vCount);
+    printf("\nNumber of consonants: %d", cCount);
+    printf("\nNumber of digits: %d\n", dCount);
+
+    return 0;
+}
+
+int yywrap()
+{
+    return 1;
+}
+
+flex count.l
+gcc lex.yy.c -o count
+
+./count

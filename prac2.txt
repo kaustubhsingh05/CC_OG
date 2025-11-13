@@ -1,0 +1,90 @@
+count_tokens.l
+
+
+%option noyywrap
+%{
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+/* Counters */
+int keywords = 0;
+int identifiers = 0;
+int comments = 0;
+int words = 0;
+int spaces = 0;
+int lines = 0;
+
+/* Keyword list (extend as needed) */
+const char *kw[] = {
+    "auto","break","case","char","const","continue","default","do","double",
+    "else","enum","extern","float","for","goto","if","inline","int","long",
+    "register","return","short","signed","sizeof","static","struct","switch",
+    "typedef","union","unsigned","void","volatile","while","_Bool","_Complex",
+    "_Imaginary", NULL
+};
+
+int isKeyword(const char *s) {
+    const char **p = kw;
+    while (*p) {
+        if (strcmp(*p, s) == 0) return 1;
+        p++;
+    }
+    return 0;
+}
+%}
+
+/* Rules */
+%%
+/\*([^*]|\*+[^*/])*\*+/    {
+                              /* Block comment matched (may contain newlines) */
+                              comments++;
+                              /* count newlines inside comment */
+                              for (char *p = yytext; *p; ++p)
+                                  if (*p == '\n') lines++;
+                            }
+
+\/\/[^\n]*                 { /* // single-line comment */
+                              comments++;
+                              /* newline (if present) will be matched by '\n' rule */
+                            }
+
+[A-Za-z_][A-Za-z0-9_]*    { /* identifiers or keywords */
+                              words++;
+                              if (isKeyword(yytext)) keywords++;
+                              else identifiers++;
+                            }
+
+[A-Za-z]+                 { /* words made only of letters (if you want to count separately) */
+                              /* Note: identifiers already counted above; this rule is only reached for pure-letter tokens
+                                 if you remove the identifier rule you could use this instead */
+                            }
+
+/" "/                     { spaces++; }     /* count ASCII spaces */
+
+"\n"                      { lines++; }      /* count newline lines */
+
+[ \t\r]+                  { /* ignore tabs and carriage returns (tabs not counted as spaces) */ }
+
+.                         { /* ignore any other character */ }
+%%
+
+int main(int argc, char **argv)
+{
+    printf("Enter input (Ctrl+D to end on Linux/macOS, Ctrl+Z then Enter on Windows):\n");
+    yylex();
+    printf("\n--- Results ---\n");
+    printf("Keywords     : %d\n", keywords);
+    printf("Identifiers  : %d\n", identifiers);
+    printf("Comments     : %d\n", comments);
+    printf("Words        : %d\n", words);
+    printf("Spaces       : %d\n", spaces);
+    printf("Lines        : %d\n", lines);
+    return 0;
+}
+
+
+flex count_tokens.l
+gcc lex.yy.c -o count_tokens
+./count_tokens
+

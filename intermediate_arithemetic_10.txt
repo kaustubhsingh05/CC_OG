@@ -1,0 +1,138 @@
+intermediate.l
+
+%option noyywrap
+
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include "intermediate.tab.h"
+%}
+
+%%
+
+[a-zA-Z_][a-zA-Z0-9_]*     { yylval.str = strdup(yytext); return ID; }
+[0-9]+                     { yylval.str = strdup(yytext); return NUM; }
+[ \t\n]+                   { /* ignore whitespace */ }
+"+"                        { return '+'; }
+"-"                        { return '-'; }
+"*"                        { return '*'; }
+"/"                        { return '/'; }
+"("                        { return '('; }
+")"                        { return ')'; }
+
+.                          { /* ignore unknown characters */ }
+
+%%
+
+
+intermediate.y
+
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int tempCount = 1;   // Counter for temporary variables
+
+typedef struct {
+    char code[100];
+    char place[10];
+} Expr;
+
+char* newtemp() {
+    static char temp[10];
+    sprintf(temp, "t%d", tempCount++);
+    return strdup(temp);
+}
+
+int yylex(void);
+void yyerror(const char *s);
+%}
+
+%union {
+    char *str;
+    Expr expr;
+}
+
+%token <str> ID NUM
+%type  <expr> E
+
+%left '+' '-'
+%left '*' '/'
+%right UMINUS
+
+%%
+input:
+      /* empty */
+    | input E '\n'  { printf("\nGenerated Intermediate Code:\n%s\n", $2.code); }
+    ;
+
+E:
+      E '+' E {
+          char *t = newtemp();
+          sprintf($$.code, "%s%s%s = %s + %s\n",
+                  $1.code, $3.code, t, $1.place, $3.place);
+          strcpy($$.place, t);
+      }
+
+    | E '-' E {
+          char *t = newtemp();
+          sprintf($$.code, "%s%s%s = %s - %s\n",
+                  $1.code, $3.code, t, $1.place, $3.place);
+          strcpy($$.place, t);
+      }
+
+    | E '*' E {
+          char *t = newtemp();
+          sprintf($$.code, "%s%s%s = %s * %s\n",
+                  $1.code, $3.code, t, $1.place, $3.place);
+          strcpy($$.place, t);
+      }
+
+    | E '/' E {
+          char *t = newtemp();
+          sprintf($$.code, "%s%s%s = %s / %s\n",
+                  $1.code, $3.code, t, $1.place, $3.place);
+          strcpy($$.place, t);
+      }
+
+    | '(' E ')' {
+          strcpy($$.code, $2.code);
+          strcpy($$.place, $2.place);
+      }
+
+    | '-' E %prec UMINUS {
+          char *t = newtemp();
+          sprintf($$.code, "%s%s = -%s\n", $2.code, t, $2.place);
+          strcpy($$.place, t);
+      }
+
+    | ID {
+          strcpy($$.code, "");
+          strcpy($$.place, $1);
+      }
+
+    | NUM {
+          strcpy($$.code, "");
+          strcpy($$.place, $1);
+      }
+    ;
+%%
+int main() {
+    printf("Enter an arithmetic expression:\n");
+    yyparse();
+    return 0;
+}
+
+void yyerror(const char *s) {
+    fprintf(stderr, "Error: %s\n", s);
+}
+
+bison -d intermediate.y
+flex intermediate.l
+gcc lex.yy.c intermediate.tab.c -o intermediate
+./intermediate
+
+
+a + b * c - d / e
+

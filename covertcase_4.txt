@@ -1,0 +1,110 @@
+lowercase to uppercase
+
+%{
+#include <stdio.h>
+%}
+
+%%
+[a-z]   { ECHO; yytext[0] = yytext[0] - 32; printf("%c", yytext[0]); }  /* Convert lowercase to uppercase */
+.|\n    { printf("%s", yytext); }                                       /* Print all other characters as is */
+%%
+
+int main() {
+    printf("Enter text (Ctrl+D to end):\n");
+    yylex();
+    return 0;
+}
+
+int yywrap() { return 1; }
+
+uppercase to lower
+
+%{
+#include <stdio.h>
+%}
+
+%%
+[A-Z]   { yytext[0] = yytext[0] + 32; printf("%c", yytext[0]); }  /* Convert uppercase to lowercase */
+.|\n    { printf("%s", yytext); }                                 /* Print others as-is */
+%%
+
+int main() {
+    printf("Enter text (Ctrl+D to end):\n");
+    yylex();
+    return 0;
+}
+
+int yywrap() { return 1; }
+
+
+convert all text to little case
+
+%{
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+%%
+.|\n    { printf("%c", tolower(yytext[0])); }  /* Convert every character to lowercase */
+%%
+
+int main() {
+    printf("Enter text (Ctrl+D to end):\n");
+    yylex();
+    return 0;
+}
+
+int yywrap() { return 1; }
+
+
+
+
+
+if case
+
+%{
+#include <stdio.h>
+#include <ctype.h>
+
+int choice;
+%}
+
+%%
+[a-z] {
+        if(choice == 1)        /* lowercase → uppercase */
+            putchar(toupper(yytext[0]));
+        else if(choice == 3)   /* full lowercase (little case) */
+            putchar(yytext[0]);   /* already lowercase */
+        else
+            putchar(yytext[0]);   /* print as is */
+     }
+
+[A-Z] {
+        if(choice == 2 || choice == 3)  /* uppercase → lowercase or little case */
+            putchar(tolower(yytext[0]));
+        else
+            putchar(yytext[0]);         /* print as is */
+     }
+
+.      { putchar(yytext[0]); }   /* any other character stays same */
+%%
+
+int main() {
+    printf("Choose conversion:\n");
+    printf("1. Lowercase → Uppercase\n");
+    printf("2. Uppercase → Lowercase\n");
+    printf("3. Convert to Little Case (all lowercase)\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+    printf("\nEnter text (Ctrl+D to finish):\n");
+
+    yylex();  /* start lexical analysis */
+
+    printf("\n\n--- Conversion Done ---\n");
+    return 0;
+}
+
+flex case_converter.l
+gcc lex.yy.c -o case_converter
+./case_converter
+

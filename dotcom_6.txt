@@ -1,0 +1,27 @@
+dotcom_end.l
+
+%{
+#include <stdio.h>
+%}
+
+%%
+.*\.com[ \t]*\n     { 
+                        printf("Line ending with .com: %s", yytext); 
+                    }
+
+.*                  { /* Ignore other lines */ }
+%%
+
+int main() {
+    printf("Enter text (Ctrl+D to finish on Linux/macOS, Ctrl+Z then Enter on Windows):\n\n");
+    yylex();
+    return 0;
+}
+
+int yywrap() {
+    return 1;
+}
+
+flex dotcom_end.l
+gcc lex.yy.c -o dotcom_end
+./dotcom_end

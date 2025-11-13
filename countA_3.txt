@@ -1,0 +1,29 @@
+words starting with A or a
+
+a.l
+%{
+#include <stdio.h>
+int count = 0;    // Counter for words starting with A/a
+%}
+
+%%
+[Aa][a-zA-Z]*     { count++; }       /* Word starting with A or a */
+[^a-zA-Z]+        ;                  /* Ignore everything else */
+%%
+
+int main()
+{
+    printf("Enter text (Ctrl+D to end):\n");
+    yylex();
+    printf("\nNumber of words starting with 'A' or 'a': %d\n", count);
+    return 0;
+}
+
+int yywrap()
+{
+    return 1;
+}
+
+flex a.l
+gcc lex.yy.c -o a
+./a

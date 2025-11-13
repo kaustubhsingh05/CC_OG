@@ -1,0 +1,27 @@
+%{
+#include <stdio.h>
+#include <stdlib.h>
+%}
+
+%%
+-?[0-9]+    {
+                long long v = atoll(yytext);
+                if (v < 0) {
+                    unsigned long long uv = (unsigned long long)(-v);
+                    printf("-%llX", uv);
+                } else {
+                    printf("%llX", (unsigned long long)v);
+                }
+            }
+.|\n        { putchar(yytext[0]); }
+%%
+
+int yywrap(void) { return 1; }
+
+int main(void)
+{
+    yylex();
+    return 0;
+}
+
+
